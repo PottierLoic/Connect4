@@ -34,11 +34,6 @@ class Board:
             if self.checkWin():
                 tourLabel.config(text=f"Le joueur {self.turn} a gagné !")
                 self.finished=True
-                if self.turn==1:
-                    color="red"
-                else:
-                    color="yellow"
-                canvas.config(bg=color)
             else:
                 self.turn=2 if self.turn==1 else 1
                 tourLabel.config(text=f"Tour : {self.turn}")
