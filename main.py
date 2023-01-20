@@ -13,8 +13,6 @@ BACKGROUND_COLOR = "#3333FF"
 SQUARE_SIZE = 100
 IN_BETwEEN = 10
 
-
-
 class Board:
     def __init__(self) -> None:
         self.board = np.zeros((HEIGHT, WIDTH), dtype=int)
@@ -33,24 +31,88 @@ class Board:
                 done=True
                 break
         if done:
-            self.checkWin()
-            self.turn=2 if self.turn==1 else 1
-            tourLabel.config(text=f"Tour : {self.turn}")
+            if self.checkWin():
+                tourLabel.config(text=f"Le joueur {self.turn} a gagné !")
+                self.finished=True
+                if self.turn==1:
+                    color="red"
+                else:
+                    color="yellow"
+                canvas.config(bg=color)
+            else:
+                self.turn=2 if self.turn==1 else 1
+                tourLabel.config(text=f"Tour : {self.turn}")
             self.graphics()
             
+    def changeWinColor(self, color, way, i, j):
+        if way=="line":
+            for x in range(4):
+                self.board[i][j+x]=color+2
+        elif way=="collum":
+            for y in range(4):
+                self.board[i+y][j]=color+2
+        elif way=="diagonal1":
+            for x in range(4):
+                self.board[i+x][j+x]=color+2
+        elif way=="diagonal2":
+            for x in range(4):
+                self.board[i-x][j+x]=color+2
+
     def checkWin(self) -> bool:
-        pass
+        # check line
+        for i in range(HEIGHT):
+            for j in range(WIDTH-3):
+                if self.board[i][j]==self.board[i][j+1]==self.board[i][j+2]==self.board[i][j+3]!=0:
+                    self.finished=True
+                    self.changeWinColor(self.board[i][j], "line", i, j)
+                    return self.board[i][j]
+        
+        # check column
+        for i in range(HEIGHT-3):
+            for j in range(WIDTH):
+                if self.board[i][j]==self.board[i+1][j]==self.board[i+2][j]==self.board[i+3][j]!=0:
+                    self.finished=True
+                    self.changeWinColor(self.board[i][j], "collum", i, j)
+                    return self.board[i][j]
+
+        # check diagonal 1
+        for i in range(HEIGHT-3):
+            for j in range(WIDTH-3):
+                if self.board[i][j]==self.board[i+1][j+1]==self.board[i+2][j+2]==self.board[i+3][j+3]!=0:
+                    self.finished=True
+                    self.changeWinColor(self.board[i][j], "diagonal1", i, j)
+                    return self.board[i][j]
+
+        # check diagonal 2
+        for i in range(3,HEIGHT):
+            for j in range(WIDTH-3):
+                if self.board[i][j]==self.board[i-1][j+1]==self.board[i-2][j+2]==self.board[i-3][j+3]!=0:
+                    self.finished=True
+                    self.changeWinColor(self.board[i][j], "diagonal2", i, j)
+                    return self.board[i][j]
+       
 
     def graphics(self):
+        canvas.delete("case")
         for i in range(len(self.board)):
             for j in range(len(self.board[i])):
                 if self.board[i][j]==0:
                     color="black"
                 elif self.board[i][j]==1:
                     color="red"
-                else:
+                elif self.board[i][j]==2:
                     color="yellow"
-                canvas.create_oval(j*SQUARE_SIZE+IN_BETwEEN*(j+1), i*SQUARE_SIZE+IN_BETwEEN*(i+1), (j+1)*SQUARE_SIZE+IN_BETwEEN*(j+1), (i+1)*SQUARE_SIZE+IN_BETwEEN*(i+1), fill=color)
+                else:
+                    color="green"
+                canvas.create_oval(j*SQUARE_SIZE+IN_BETwEEN*(j+1), i*SQUARE_SIZE+IN_BETwEEN*(i+1), (j+1)*SQUARE_SIZE+IN_BETwEEN*(j+1), (i+1)*SQUARE_SIZE+IN_BETwEEN*(i+1), fill=color, tag="case")
+
+    def reset(self):
+        self.board = np.zeros((HEIGHT, WIDTH), dtype=int)
+        self.turn=1
+        self.finished=False
+        canvas.config(bg=BACKGROUND_COLOR)
+        tourLabel.config(text=f"Tour : {self.turn}")
+        self.graphics()
 
     def __str__(self) -> str:
         returnStr=""
@@ -62,12 +124,15 @@ class Board:
 
 def click(event):
     global b
-    x=event.x
-    y=event.y
-    if x<0 or x>WIDTH*SQUARE_SIZE+IN_BETwEEN*(WIDTH+1) or y<0 or y>HEIGHT*SQUARE_SIZE+IN_BETwEEN*(HEIGHT+1):
-        return
-    column = x//(SQUARE_SIZE+IN_BETwEEN)
-    b.nextAction(column)
+    if not b.finished:
+        x=event.x
+        y=event.y
+        if x<0 or x>WIDTH*SQUARE_SIZE+IN_BETwEEN*(WIDTH+1) or y<0 or y>HEIGHT*SQUARE_SIZE+IN_BETwEEN*(HEIGHT+1):
+            return
+        column = x//(SQUARE_SIZE+IN_BETwEEN)
+        b.nextAction(column)
+    else:
+        b.reset()
 
 
 if __name__=="__main__":
